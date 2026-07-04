@@ -28,7 +28,7 @@ Returns JSON:
 
 ```bash
 npm install
-cp .env.example .env   # fill in ANTHROPIC_API_KEY
+cp .env.example .env   # fill in VENICE_API_KEY
 npm run build
 npm start
 ```
@@ -40,7 +40,7 @@ Health check: `GET /health`.
 
 Same as the Paystack ASP — Railway or Render is the fastest path to a
 public HTTPS endpoint. Build command `npm install && npm run build`,
-start command `npm start`, env var `ANTHROPIC_API_KEY`.
+start command `npm start`, env var `VENICE_API_KEY`.
 
 ## Registering on OKX.AI
 
@@ -50,10 +50,10 @@ You can register both ASPs from the same Agentic Wallet session.
 
 ## Notes / tuning
 
-- Pricing per call: since this hits the Claude API per request, price
+- Pricing per call: since this hits the Venice AI API per request, price
   the call above your API cost (e.g. $0.05–$0.15/call) when OKX asks
   for pricing during registration — don't leave it at whatever default
-  it suggests without checking your Claude usage cost per call.
+  it suggests without checking your Venice AI usage cost per call.
 - `duration_minutes` caps at 20 — reasonable ceiling for short-form.
 - If you want this to double as your **Social Buzz** submission, the
   demo video should show the *tool being called by an agent*, not just

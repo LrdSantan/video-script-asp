@@ -1,14 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
-
-let _client: Anthropic | null = null;
-function client() {
-  if (!_client) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set in environment variables");
-    _client = new Anthropic({ apiKey });
-  }
-  return _client;
-}
+const VENICE_BASE_URL = "https://api.venice.ai/api/v1";
+const VENICE_MODEL = "llama-3.3-70b";
 
 export interface GenerateScriptParams {
   topic: string;
@@ -66,17 +57,35 @@ Audience: ${audience}
 
 Write the full script now, following the JSON schema exactly.`;
 
-  const response = await client().messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 4000,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userPrompt }],
+  const apiKey = process.env.VENICE_API_KEY;
+  if (!apiKey) throw new Error("VENICE_API_KEY is not set in environment variables");
+
+  const res = await fetch(`${VENICE_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: VENICE_MODEL,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      venice_parameters: { include_venice_system_prompt: false },
+    }),
   });
 
-  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
-  if (!textBlock) throw new Error("No text response from model");
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Venice API error (${res.status}): ${errText}`);
+  }
 
-  const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
+  const data = (await res.json()) as any;
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error("No text response from model");
+
+  const cleaned = text.replace(/```json|```/g, "").trim();
   const parsed = JSON.parse(cleaned) as GeneratedScript;
   return parsed;
 }
