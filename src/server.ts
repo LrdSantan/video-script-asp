@@ -89,7 +89,15 @@ app.use(
   ),
 );
 
-app.get("/health", (_req, res) => res.json({ status: "ok", service: "video-script-generator" }));
+app.get("/health", (_req, res) => res.json({
+  status: "ok",
+  service: "video-script-generator",
+  okx_api_key_set: !!process.env.OKX_API_KEY,
+  okx_secret_set: !!process.env.OKX_SECRET_KEY,
+  okx_passphrase_set: !!process.env.OKX_PASSPHRASE,
+  pay_to_set: !!process.env.PAY_TO_ADDRESS,
+  venice_api_key_set: !!process.env.VENICE_API_KEY,
+}));
 
 app.post("/mcp*", async (req, res, next) => {
   // Restore URL to /mcp so StreamableHTTPServerTransport sees the base path
