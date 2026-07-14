@@ -89,6 +89,8 @@ app.use(
   ),
 );
 
+let initStatus: { success: boolean; error?: string } = { success: false, error: "Not initialized yet" };
+
 app.get("/health", (_req, res) => res.json({
   status: "ok",
   service: "video-script-generator",
@@ -97,6 +99,7 @@ app.get("/health", (_req, res) => res.json({
   okx_passphrase_set: !!process.env.OKX_PASSPHRASE,
   pay_to_set: !!process.env.PAY_TO_ADDRESS,
   venice_api_key_set: !!process.env.VENICE_API_KEY,
+  init_status: initStatus,
 }));
 
 app.post("/mcp*", async (req, res, next) => {
@@ -134,8 +137,10 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 (async () => {
   try {
     await resourceServer.initialize();
+    initStatus = { success: true };
     console.log("OKX x402 Resource Server initialized successfully.");
-  } catch (err) {
+  } catch (err: any) {
+    initStatus = { success: false, error: err.message || String(err) };
     console.error("Failed to initialize OKX x402 Resource Server:", err);
     // Don't exit — facilitator may recover; server can still start
   }
