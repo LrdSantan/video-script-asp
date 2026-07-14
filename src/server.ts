@@ -91,7 +91,9 @@ app.use(
 
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "video-script-generator" }));
 
-app.post("/mcp*", async (req, res) => {
+app.post("/mcp*", async (req, res, next) => {
+  // Restore URL to /mcp so StreamableHTTPServerTransport sees the base path
+  req.url = "/mcp";
   const server = buildServer();
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
@@ -102,8 +104,21 @@ app.post("/mcp*", async (req, res) => {
     server.close();
   });
 
-  await server.connect(transport);
-  await transport.handleRequest(req, res, req.body);
+  try {
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Express error handler — surfaces the actual error message in logs & response
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("Unhandled Express error:", err);
+  if (!res.headersSent) {
+    res.status(500).json({ error: err?.message ?? "Internal Server Error" });
+  }
 });
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
