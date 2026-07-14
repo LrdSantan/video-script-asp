@@ -44,24 +44,24 @@ function buildServer() {
 }
 
 const NETWORK = "eip155:196" as const;
-const PAY_TO = process.env.PAY_TO_ADDRESS!;
+const PAY_TO = process.env.PAY_TO_ADDRESS || "0xb303077bf3a3877d0e1614487334919a8b349840";
 
 const facilitator = new OKXFacilitatorClient({
-  apiKey: process.env.OKX_API_KEY!,
-  secretKey: process.env.OKX_SECRET_KEY!,
-  passphrase: process.env.OKX_PASSPHRASE!,
+  apiKey: process.env.OKX_API_KEY || "",
+  secretKey: process.env.OKX_SECRET_KEY || "",
+  passphrase: process.env.OKX_PASSPHRASE || "",
 });
 
 const resourceServer = new x402ResourceServer(facilitator)
   .register(NETWORK, new ExactEvmScheme());
 
 const priced = {
-  scheme: "exact",
+  scheme: "exact" as const,
   network: NETWORK,
   payTo: PAY_TO,
-  price: "$0.03",
-  syncSettle: true,
-} as const;
+  price: "$0.03" as const,
+  syncSettle: true as const,
+};
 
 const app = express();
 app.use(express.json());
