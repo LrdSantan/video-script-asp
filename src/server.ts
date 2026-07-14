@@ -122,13 +122,18 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
-app.listen(PORT, async () => {
+
+(async () => {
   try {
     await resourceServer.initialize();
     console.log("OKX x402 Resource Server initialized successfully.");
   } catch (err) {
     console.error("Failed to initialize OKX x402 Resource Server:", err);
+    // Don't exit — facilitator may recover; server can still start
   }
-  console.log(`Video Script Generator MCP server listening on port ${PORT}`);
-  console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
-});
+
+  app.listen(PORT, () => {
+    console.log(`Video Script Generator MCP server listening on port ${PORT}`);
+    console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
+  });
+})();
