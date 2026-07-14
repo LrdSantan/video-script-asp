@@ -4,6 +4,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 import { generateVideoScript } from "./scriptgen";
+import { paymentMiddleware, x402ResourceServer } from "@okxweb3/x402-express";
+import { ExactEvmScheme } from "@okxweb3/x402-evm/exact/server";
+import { OKXFacilitatorClient } from "@okxweb3/x402-core";
 
 function buildServer() {
   const server = new McpServer({
@@ -40,12 +43,55 @@ function buildServer() {
   return server;
 }
 
+const NETWORK = "eip155:196" as const;
+const PAY_TO = process.env.PAY_TO_ADDRESS!;
+
+const facilitator = new OKXFacilitatorClient({
+  apiKey: process.env.OKX_API_KEY!,
+  secretKey: process.env.OKX_SECRET_KEY!,
+  passphrase: process.env.OKX_PASSPHRASE!,
+});
+
+const resourceServer = new x402ResourceServer(facilitator)
+  .register(NETWORK, new ExactEvmScheme());
+
+const priced = {
+  scheme: "exact",
+  network: NETWORK,
+  payTo: PAY_TO,
+  price: "$0.03",
+  syncSettle: true,
+} as const;
+
 const app = express();
 app.use(express.json());
 
+// Adapter layer to branch on JSON-RPC tool name before matching a route key in OKX SDK
+app.use((req, res, next) => {
+  if (req.method === "POST" && req.path === "/mcp" && req.body?.method === "tools/call") {
+    const toolName = req.body.params?.name;
+    if (toolName) {
+      req.url = `/mcp/${toolName}`;
+    }
+  }
+  next();
+});
+
+app.use(
+  paymentMiddleware(
+    {
+      "POST /mcp/generate_video_script": { accepts: [priced], description: "Generate video script" },
+    },
+    resourceServer,
+    undefined,
+    undefined,
+    false,
+  ),
+);
+
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "video-script-generator" }));
 
-app.post("/mcp", async (req, res) => {
+app.post("/mcp*", async (req, res) => {
   const server = buildServer();
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
@@ -61,7 +107,13 @@ app.post("/mcp", async (req, res) => {
 });
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  try {
+    await resourceServer.initialize();
+    console.log("OKX x402 Resource Server initialized successfully.");
+  } catch (err) {
+    console.error("Failed to initialize OKX x402 Resource Server:", err);
+  }
   console.log(`Video Script Generator MCP server listening on port ${PORT}`);
   console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
 });

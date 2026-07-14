@@ -1,0 +1,3 @@
+@echo off
+set PATH=C:\Users\DELL\.local\bin;%PATH%
+onchainos agent update --agent-id 4352 --service "[{\"operation\":\"update\",\"id\":\"24776\",\"serviceName\":\"Video Script Generator\",\"serviceDescription\":\"Summary: Generates broadcast-ready short-form video scripts (hook, scenes, narration, visual direction, music cues, and CTA) from a topic.\nInput requirements: topic (string, required), duration_minutes (number, optional, default 3), tone (enum: educational/entertaining/news/dramatic/casual, optional), language (string, optional), audience (string, optional).\",\"serviceType\":\"A2MCP\",\"fee\":\"0.03\",\"endpoint\":\"https://video-script-asp-production.up.railway.app/mcp\"}]"
