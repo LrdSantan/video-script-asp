@@ -64,6 +64,30 @@ const priced = {
 };
 
 const app = express();
+
+// FIX: The MCP transport's Node→Web-Standard request conversion
+// (@hono/node-server) builds its Headers object from req.rawHeaders — the
+// raw wire-format array — NOT from req.headers. OKX's x402 replay client
+// sends "Accept: */*", which fails the transport's requirement for both
+// "application/json" and "text/event-stream". We strip any existing Accept
+// header from the raw array and inject the correct one.
+app.use((req, res, next) => {
+  if (req.path === "/mcp" || req.path.startsWith("/mcp/")) {
+    const filtered: string[] = [];
+    for (let i = 0; i < req.rawHeaders.length; i += 2) {
+      const key = req.rawHeaders[i];
+      const value = req.rawHeaders[i + 1];
+      if (key.toLowerCase() !== "accept") {
+        filtered.push(key, value);
+      }
+    }
+    filtered.push("Accept", "application/json, text/event-stream");
+    req.rawHeaders = filtered;
+    req.headers.accept = "application/json, text/event-stream";
+  }
+  next();
+});
+
 app.use(express.json());
 
 // Adapter layer to branch on JSON-RPC tool name before matching a route key in OKX SDK
