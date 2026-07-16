@@ -113,7 +113,7 @@ app.use(
   ),
 );
 
-let initStatus: { success: boolean; error?: string } = { success: false, error: "Not initialized yet" };
+let initStatus: { success: boolean; error?: string; cause?: string } = { success: false, error: "Not initialized yet" };
 
 app.get("/health", (_req, res) => res.json({
   status: "ok",
