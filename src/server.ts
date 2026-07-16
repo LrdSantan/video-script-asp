@@ -167,7 +167,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
     initStatus = {
       success: false,
       error: err.message || String(err),
-      cause: err.cause ? (err.cause.message || String(err.cause)) : undefined,
+      cause: err.cause ? (err.cause.message || String(err.cause)) : "no cause found",
     };
     console.error("Failed to initialize OKX x402 Resource Server:", err, "Cause:", err.cause);
     // Don't exit — facilitator may recover; server can still start
